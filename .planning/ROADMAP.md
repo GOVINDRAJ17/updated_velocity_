@@ -2,12 +2,13 @@
 
 ## Milestone 1: Baseline & Optimization
 
-### Phase 1: Infrastructure & Testing
+### Phase 1: Infrastructure & Testing [COMPLETE]
 - **Goal**: Setup testing and improve architectural robustness.
 - **Plans**:
-  - Plan 1: Configure Vitest and Playwright.
-  - Plan 2: Add initial unit tests for core libraries.
-  - Plan 3: Audit and fix Capacitor plugin error handling.
+  - [x] Plan 1: Configure Vitest and Playwright.
+  - [x] Plan 2: Add initial unit tests for core libraries.
+  - [x] Plan 3: Audit and fix Capacitor plugin error handling.
+
 
 ### Phase 2: Routing Refactor
 - **Goal**: Implement a standard router for better maintainability.
