@@ -172,7 +172,7 @@ export function PaymentPortal({
                   <div className="bg-white p-5 rounded-3xl shadow-2xl mb-4 relative group">
                      <div className="absolute inset-0 bg-blue-500/10 rounded-3xl blur-xl transition-all"></div>
                      <img 
-                       src={`https://api.qrserver.com/v1/create-qr-code/?data=upi://pay?pa=${creatorUpi}&pn=VelocityApp&am=${amount}&cu=INR&tn=SplitPay&mode=02&size=200x200`} 
+                       src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(`upi://pay?pa=${creatorUpi}&pn=VelocityApp&am=${amount}&cu=INR&tn=SplitPay&mode=02`)}&size=200x200`} 
                        alt="Creator UPI QR"
                        className="relative w-40 h-40"
                      />

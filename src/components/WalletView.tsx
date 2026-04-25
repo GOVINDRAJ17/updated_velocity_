@@ -258,7 +258,7 @@ export function WalletView({ onClose }: WalletViewProps) {
                   <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Scan with GPay / PhonePe</p>
                   <div className="bg-white p-3 rounded-xl w-fit mx-auto mb-4">
                     <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?data=upi://pay?pa=velocity@oksbi&pn=VelocityApp&am=${amount || 100}&cu=INR&size=160x160`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(`upi://pay?pa=velocity@oksbi&pn=VelocityApp&am=${amount || 100}&cu=INR`)}&size=160x160`}
                       alt="QR"
                       className="w-28 h-28"
                     />
