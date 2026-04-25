@@ -104,9 +104,13 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
     if (!selectedRideId) return;
     const { data, error } = await supabase
       .from('rides')
-      .select('driver:profiles!driver_id(id, full_name, avatar_url), participants:ride_participants(user_id, profile:profiles(id, full_name, avatar_url))')
+      .select('driver:profiles!driver_id(id, full_name, avatar_url), participants:ride_participants(user_id, profiles:user_id(id, full_name, avatar_url))')
       .eq('id', selectedRideId)
       .single();
+
+    if (error) {
+      console.error("fetchParticipants error:", error);
+    }
 
     if (data) {
       const uniqueUsers = new Map();
@@ -116,8 +120,8 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
       }
       
       data.participants?.forEach((p: any) => {
-        if (p.profile) {
-          uniqueUsers.set(p.profile.id, p.profile);
+        if (p.profiles) {
+          uniqueUsers.set(p.profiles.id, p.profiles);
         }
       });
       
