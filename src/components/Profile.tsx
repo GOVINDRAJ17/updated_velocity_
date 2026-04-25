@@ -427,22 +427,23 @@ export function Profile() {
                 <Wallet className="w-6 h-6 text-blue-500" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 flex items-center gap-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
                   Velocity Wallet
-                  <button 
-                    onClick={handleRevealBalance} 
-                    className={`flex items-center justify-center p-1.5 rounded-full transition-all duration-300 active:scale-90 ${isBalanceRevealed ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200'}`}
-                  >
-                    {isBalanceRevealed ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                  </button>
                 </p>
-                <div className="text-2xl font-black flex items-center transition-all">
+                <div className="text-2xl font-black flex items-center transition-all mb-1">
                   {isBalanceRevealed ? (
                     <span className="animate-in fade-in zoom-in-95 duration-300">₹{walletBalance.toLocaleString()}</span>
                   ) : (
                     <span className="text-slate-600 tracking-widest">₹ ••••</span>
                   )}
                 </div>
+                <button 
+                  onClick={handleRevealBalance} 
+                  className={`flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest transition-all duration-300 active:scale-90 ${isBalanceRevealed ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  {isBalanceRevealed ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  {isBalanceRevealed ? 'Hide Balance' : 'Reveal Balance'}
+                </button>
               </div>
             </div>
             <button 
