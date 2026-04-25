@@ -135,10 +135,13 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
     }
   };
 
+  const [isCreatingSplit, setIsCreatingSplit] = useState(false);
+
   const handleCreateSplit = async () => {
-    if (!title || !amount || parseFloat(amount) <= 0) return;
+    if (!title || !amount || parseFloat(amount) <= 0 || isCreatingSplit) return;
 
     try {
+      setIsCreatingSplit(true);
       if (!currentUser?.upi_id) {
         alert("🚨 IDENTITY ERROR: You must link a valid UPI ID in your Profile before creating a split. This ensures you can receive payments.");
         return;
@@ -163,12 +166,22 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
         }
       }
 
-      await createSplit(selectedRideId, title, total, memberData, currentUser.id);
+      // Final deduplication check to prevent 409 Conflict
+      const uniqueMemberIds = new Set();
+      const deduplicatedMembers = memberData.filter(m => {
+        if (uniqueMemberIds.has(m.user_id)) return false;
+        uniqueMemberIds.add(m.user_id);
+        return true;
+      });
+
+      await createSplit(selectedRideId, title, total, deduplicatedMembers, currentUser.id);
       setShowCreate(false);
       setTitle('');
       setAmount('');
     } catch (err: any) {
       alert("Error: " + err.message);
+    } finally {
+      setIsCreatingSplit(false);
     }
   };
 
@@ -474,9 +487,10 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
 
                  <button 
                   onClick={handleCreateSplit}
+                   disabled={isCreatingSplit}
                   className="w-full bg-blue-600 text-white rounded-2xl py-5 font-black text-sm uppercase tracking-widest shadow-2xl shadow-blue-900/40 active:scale-95 transition-all"
                  >
-                    Deploy Ledger
+                    {isCreatingSplit ? 'Deploying...' : 'Deploy Ledger'}
                  </button>
               </div>
            </div>

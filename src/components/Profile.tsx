@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
-import { Share2, Edit2, ShieldCheck, MapPin, Calendar, Clock, Award, Wallet, CheckCircle2, Bell, Users, Car, Settings2, Flag, ArrowRight, Zap, Eye, EyeOff } from 'lucide-react';
+import { Share2, Edit2, ShieldCheck, MapPin, Calendar, Clock, Award, Wallet, CheckCircle2, Bell, Users, Car, Settings2, Flag, ArrowRight, Eye, EyeOff, Bike, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useRides } from '../contexts/RideContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -176,6 +176,13 @@ export function Profile() {
         profileData = newProfile;
       }
 
+      let vehicles = [];
+      try {
+        vehicles = JSON.parse(profileData.riding_style || '[]');
+      } catch (e) {
+        vehicles = [];
+      }
+
       setProfile(profileData);
       setWalletBalance(Number(profileData.wallet_balance || 0));
       setFormData({
@@ -184,7 +191,13 @@ export function Profile() {
         dob: profileData.dob || '', bike_model: profileData.bike_model || '',
         vehicle_type: profileData.vehicle_type || 'Bike', number_plate: profileData.number_plate || '',
         plate_private: profileData.plate_private || false, experience_level: profileData.experience_level || 'Beginner',
-        avatar_url: profileData.avatar_url || '', upi_id: profileData.upi_id || ''
+        avatar_url: profileData.avatar_url || '', upi_id: profileData.upi_id || '',
+        vehicles: vehicles.length > 0 ? vehicles : [{
+          vehicle_type: profileData.vehicle_type || 'Bike',
+          bike_model: profileData.bike_model || '',
+          number_plate: profileData.number_plate || '',
+          plate_private: profileData.plate_private || false
+        }]
       });
 
       const { data: myRoutes } = await supabase.from('rides').select('*').eq('driver_id', session.user.id).order('created_at', { ascending: false });
@@ -240,8 +253,11 @@ export function Profile() {
         username: formData.username || null,
         upi_id: formData.upi_id || null,
         bio: formData.bio,
-        bike_model: formData.bike_model,
-        number_plate: formData.number_plate,
+        bike_model: formData.vehicles?.[0]?.bike_model || formData.bike_model,
+        vehicle_type: formData.vehicles?.[0]?.vehicle_type || formData.vehicle_type,
+        number_plate: formData.vehicles?.[0]?.number_plate || formData.number_plate,
+        plate_private: formData.vehicles?.[0]?.plate_private ?? formData.plate_private,
+        riding_style: JSON.stringify(formData.vehicles || []),
         avatar_url: formData.avatar_url
       };
 
@@ -560,45 +576,46 @@ export function Profile() {
           </div>
         </section>
 
-        {/* NEW 2: MY VEHICLE */}
+        {/* NEW 2: MY VEHICLES */}
         <section className="mb-8 animate-slide-up" style={{ animationDelay: '250ms' }}>
           <h3 className={`text-xs font-black uppercase tracking-[0.15em] mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            My Vehicle
+            My Vehicles
           </h3>
-          <div className={`p-5 rounded-[2rem] flex items-center justify-between group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden ${isDark ? 'bg-[#1A1F2E] border border-white/5 hover:border-blue-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.2)]' : 'bg-white border border-slate-200 shadow-sm hover:shadow-md'}`}>
-            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full group-hover:bg-indigo-500/10 transition-all" />
-            
+          <div className="space-y-4">
             {isVehicleLoading ? (
-              <div className="animate-pulse flex items-center gap-4 w-full">
+              <div className={`p-5 rounded-[2rem] animate-pulse flex items-center gap-4 w-full ${isDark ? 'bg-[#1A1F2E]' : 'bg-white'}`}>
                 <div className="w-12 h-12 rounded-full bg-slate-700/20" />
                 <div className="flex-1">
                   <div className="w-1/2 h-5 bg-slate-700/20 rounded mb-2" />
                   <div className="w-1/3 h-4 bg-slate-700/20 rounded" />
                 </div>
               </div>
-            ) : vehicle ? (
-              <>
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                    <Car className="w-5 h-5 text-indigo-400" />
+            ) : formData.vehicles && formData.vehicles.length > 0 ? (
+              formData.vehicles.map((v: any, i: number) => (
+                <div key={i} className={`p-5 rounded-[2rem] flex items-center justify-between group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden ${isDark ? 'bg-[#1A1F2E] border border-white/5 hover:border-blue-500/30 shadow-[0_4px_20px_rgba(0,0,0,0.2)]' : 'bg-white border border-slate-200 shadow-sm hover:shadow-md'}`}>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full group-hover:bg-indigo-500/10 transition-all" />
+                  
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                      {v.vehicle_type === 'Car' ? <Car className="w-5 h-5 text-indigo-400" /> : <Bike className="w-5 h-5 text-indigo-400" />}
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black">{v.bike_model}</h4>
+                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-0.5">{v.number_plate}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-base font-black">{vehicle.name}</h4>
-                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-0.5">{vehicle.number}</p>
-                  </div>
+                  {i === 0 && (
+                    <div className="relative z-10 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[9px] font-black text-blue-400 uppercase tracking-widest">
+                      Primary
+                    </div>
+                  )}
                 </div>
-                <button 
-                  onClick={() => setIsEditing(true)}
-                  className={`relative z-10 p-3 rounded-xl transition-all press-effect shadow-md hover:scale-[1.05] active:scale-95 ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
-                >
-                  <Settings2 className="w-4 h-4" />
-                </button>
-              </>
+              ))
             ) : (
-              <div className="flex items-center justify-between w-full relative z-10">
+              <div className={`p-5 rounded-[2rem] flex items-center justify-between w-full relative z-10 ${isDark ? 'bg-[#1A1F2E]' : 'bg-white'}`}>
                 <div className="flex items-center gap-3">
                   <Car className="w-5 h-5 text-slate-500" />
-                  <span className="text-sm font-bold text-slate-400">No vehicle added</span>
+                  <span className="text-sm font-bold text-slate-400">No vehicles added</span>
                 </div>
                 <button 
                   onClick={() => setIsEditing(true)}
