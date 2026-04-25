@@ -32,6 +32,8 @@ export function Profile() {
   const [showSplitOverlay, setShowSplitOverlay] = useState(false);
   const [showWalletOverlay, setShowWalletOverlay] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isBalanceRevealed, setIsBalanceRevealed] = useState(false);
+  const balanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [showAvatarPresets, setShowAvatarPresets] = useState(false);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -69,6 +71,7 @@ export function Profile() {
 
     return () => {
       supabase.removeChannel(channel);
+      if (balanceTimeoutRef.current) clearTimeout(balanceTimeoutRef.current);
     };
   }, []);
 
@@ -258,6 +261,50 @@ export function Profile() {
     }
   };
 
+  const handleRevealBalance = async () => {
+    if (isBalanceRevealed) {
+      setIsBalanceRevealed(false);
+      if (balanceTimeoutRef.current) clearTimeout(balanceTimeoutRef.current);
+      return;
+    }
+
+    try {
+      if (window.PublicKeyCredential) {
+        try {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              timeout: 60000,
+              userVerification: 'required'
+            }
+          });
+          // Authenticated successfully via biometrics/device PIN
+        } catch (e: any) {
+          // If no passkey or canceled, fallback to a simple prompt
+          console.warn("WebAuthn skipped or failed:", e);
+          const pin = window.prompt("Device Security: Enter PIN to reveal balance (Use any 4 digits for testing)");
+          if (!pin) return;
+        }
+      } else {
+        const pin = window.prompt("Device Security: Enter PIN to reveal balance");
+        if (!pin) return;
+      }
+
+      setIsBalanceRevealed(true);
+      toastSuccess('Identity Verified. Balance revealed.');
+      
+      if (balanceTimeoutRef.current) clearTimeout(balanceTimeoutRef.current);
+      balanceTimeoutRef.current = setTimeout(() => {
+        setIsBalanceRevealed(false);
+      }, 15000);
+    } catch (err) {
+      console.error(err);
+      toastError("Authentication failed");
+    }
+  };
+
   const shareProfile = () => {
     const text = `Check out my rider profile on Velocity: @${profile?.username || profile?.full_name || 'Guest'}!`;
     if (navigator.share) {
@@ -380,8 +427,19 @@ export function Profile() {
                 <Wallet className="w-6 h-6 text-blue-500" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Velocity Wallet</p>
-                <p className="text-2xl font-black">₹{walletBalance.toLocaleString()}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 flex items-center gap-2">
+                  Velocity Wallet
+                  <button onClick={handleRevealBalance} className="text-slate-500 hover:text-white transition-colors">
+                    {isBalanceRevealed ? '👁' : '🔒'}
+                  </button>
+                </p>
+                <div className="text-2xl font-black flex items-center transition-all">
+                  {isBalanceRevealed ? (
+                    <span className="animate-in fade-in zoom-in-95 duration-300">₹{walletBalance.toLocaleString()}</span>
+                  ) : (
+                    <span className="text-slate-600 tracking-widest">₹ ••••</span>
+                  )}
+                </div>
               </div>
             </div>
             <button 

@@ -338,12 +338,17 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
                            </div>
                            <div className="flex items-center gap-3">
                               {member.payment_status === 'paid' ? (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                <div className="flex items-center gap-1.5 text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest">Paid</span>
+                                </div>
                               ) : (
-                                <div className="text-[8px] font-black text-slate-500 border border-white/10 px-2 py-1 rounded-md uppercase tracking-widest">Pending</div>
+                                <div className="flex items-center gap-1.5 text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-md border border-rose-500/20">
+                                  <span className="text-[9px] font-black uppercase tracking-widest">Pending</span>
+                                </div>
                               )}
                               {isOwner && member.payment_status === 'pending' && member.user_id !== currentUser?.id && (
-                                <button className="p-1.5 bg-blue-500/10 rounded-lg text-blue-400 hover:bg-blue-500 hover:text-white transition-all">
+                                <button className="p-1.5 bg-rose-500/10 rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-all">
                                    <Send className="w-3.5 h-3.5" />
                                 </button>
                               )}

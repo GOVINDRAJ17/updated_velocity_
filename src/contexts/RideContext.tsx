@@ -58,22 +58,23 @@ export function RideProvider({ children }: { children: ReactNode }) {
       const ridesData = data || [];
       setAllRides(ridesData);
 
+      const activeRides = ridesData.filter(r => getRideStatus(r) !== 'past');
+
       if (userId) {
-        const mine = ridesData.filter(r => 
+        const mine = activeRides.filter(r => 
           r.driver?.id === userId || 
           r.participants.some((p: any) => p.user_id === userId)
         );
-        const discover = ridesData.filter(r => 
+        const discover = activeRides.filter(r => 
           r.driver?.id !== userId && 
-          !r.participants.some((p: any) => p.user_id === userId) &&
-          getRideStatus(r) !== 'past'
+          !r.participants.some((p: any) => p.user_id === userId)
         );
         
         setMyRides(mine);
         setDiscoverRides(discover);
       } else {
         setMyRides([]);
-        setDiscoverRides(ridesData.filter(r => getRideStatus(r) !== 'past'));
+        setDiscoverRides(activeRides);
       }
     } catch (err) {
       console.error("Critical context error", err);

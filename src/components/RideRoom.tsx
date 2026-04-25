@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useParticipants, useConnectionState } from '@livekit/components-react';
 import { useNavigate } from 'react-router-dom';
 import { VoiceChannel } from './VoiceChannel';
+import { useRides } from '../contexts/RideContext';
 
 export function RideRoom() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export function RideRoom() {
   const participants = useParticipants();
   const connState = useConnectionState();
   const chatMessagesRef = useRef<HTMLDivElement>(null);
+  const { getRideStatus } = useRides();
 
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -23,6 +25,15 @@ export function RideRoom() {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Handle auto-redirect if ride expires while viewing
+  useEffect(() => {
+    if (activeRide && getRideStatus(activeRide) === 'past') {
+      // Optional: Auto redirect after 3 seconds
+      const timer = setTimeout(() => navigate('/'), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeRide, getRideStatus, navigate]);
 
   // Example of how the requested REST API integration looks, 
   // though LiveRoomContext currently handles real-time syncing automatically via Supabase.
@@ -70,6 +81,25 @@ export function RideRoom() {
   }
 
   const isDark = theme !== 'light';
+  const isExpired = getRideStatus(activeRide) === 'past';
+
+  if (isExpired) {
+    return (
+      <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center animate-in slide-in-from-bottom-8 duration-300 ${isDark ? 'bg-[#0B0F19] text-white' : 'bg-slate-50 text-slate-900'}`}>
+        <div className="w-24 h-24 bg-rose-500/10 rounded-full flex items-center justify-center mb-6">
+          <ShieldAlert className="w-12 h-12 text-rose-500" />
+        </div>
+        <h2 className="text-2xl font-black mb-2 tracking-tight text-center">Formation Expired</h2>
+        <p className="text-slate-500 text-center mb-8 max-w-sm">This ride has been completed or expired. Communications have been secured.</p>
+        <button 
+          onClick={() => navigate('/')}
+          className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform shadow-lg shadow-white/5"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`fixed inset-0 z-50 flex animate-in slide-in-from-bottom-8 duration-300 ${isDark ? 'bg-[#0B0F19] text-white' : 'bg-slate-50 text-slate-900'}`}>
