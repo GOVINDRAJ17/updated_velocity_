@@ -109,13 +109,19 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
       .single();
 
     if (data) {
-      const all: any[] = [];
-      if (data.driver) all.push(data.driver);
+      const uniqueUsers = new Map();
+      
+      if (data.driver) {
+        uniqueUsers.set(data.driver.id, data.driver);
+      }
       
       data.participants?.forEach((p: any) => {
-        if (p.profile) all.push(p.profile);
+        if (p.profile) {
+          uniqueUsers.set(p.profile.id, p.profile);
+        }
       });
       
+      const all = Array.from(uniqueUsers.values());
       setParticipants(all);
       
       // Initialize custom amounts
