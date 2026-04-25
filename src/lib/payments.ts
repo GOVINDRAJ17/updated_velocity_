@@ -42,7 +42,7 @@ export const createSplit = async (
     split_id: split.id,
     user_id: m.user_id,
     amount: m.amount,
-    payment_status: m.user_id === createdBy ? 'paid' : 'pending'
+    payment_status: 'pending' // Default everyone to pending so creator can test the payment flow
   }));
 
   const { error: membersError } = await supabase
