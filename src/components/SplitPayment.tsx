@@ -209,9 +209,9 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
                <p className="text-sm font-bold uppercase tracking-widest leading-loose">No active formations<br/>found in your ledger</p>
             </div>
           ) : (
-            availableRides.map(ride => (
+            availableRides.map((ride, idx) => (
               <div 
-                key={ride.id} 
+                key={`${ride.id}-${idx}`} 
                 onClick={() => setSelectedRideId(ride.id)}
                 className="group bg-gradient-to-br from-white/5 to-white/[0.02] hover:from-blue-500/10 hover:to-indigo-500/5 border border-white/5 p-6 rounded-[2.5rem] flex items-center justify-between transition-all active:scale-[0.98] cursor-pointer shadow-lg"
               >
@@ -277,7 +277,7 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
           </div>
         ) : (
           <div className="space-y-6">
-            {splits.map((split: any) => {
+            {splits.map((split: any, idx: number) => {
               const myEntry = split.split_members.find((m: any) => m.user_id === currentUser?.id);
               const paidCount = split.split_members.filter((m: any) => m.payment_status === 'paid').length;
               const totalCount = split.split_members.length;
@@ -285,7 +285,7 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
               const isOwner = split.created_by === currentUser?.id;
 
               return (
-                <div key={split.id} className="bg-gradient-to-br from-[#121624] to-[#0B0F19] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden group">
+                <div key={`${split.id}-${idx}`} className="bg-gradient-to-br from-[#121624] to-[#0B0F19] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden group">
                    <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
                    
                    <div className="flex justify-between items-start mb-6">
@@ -317,8 +317,8 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
 
                    {/* Members */}
                    <div className="space-y-3 mb-6">
-                      {split.split_members.map((member: any) => (
-                        <div key={member.id} className="flex items-center justify-between p-3 bg-black/20 rounded-2xl border border-white/5">
+                      {split.split_members.map((member: any, i: number) => (
+                        <div key={`${member.id}-${i}`} className="flex items-center justify-between p-3 bg-black/20 rounded-2xl border border-white/5">
                            <div className="flex items-center gap-3">
                               <img src={member.profiles?.avatar_url || 'https://via.placeholder.com/32'} className="w-8 h-8 rounded-full border border-white/10 object-cover" />
                               <div>
@@ -430,10 +430,10 @@ export function SplitPayment({ rideId: propRideId, onClose }: SplitPaymentProps)
                     </div>
 
                     <div className="space-y-4">
-                       {participants.map(p => {
+                       {participants.map((p, i) => {
                          const equalShare = amount ? (parseFloat(amount) / participants.length).toFixed(2) : '0.00';
                          return (
-                          <div key={p.id} className="flex items-center justify-between gap-4 p-3 bg-black/20 rounded-2xl border border-white/5">
+                          <div key={`${p.id}-${i}`} className="flex items-center justify-between gap-4 p-3 bg-black/20 rounded-2xl border border-white/5">
                              <div className="flex items-center gap-3">
                                 <img src={p.avatar_url || 'https://via.placeholder.com/32'} className="w-8 h-8 rounded-full border border-white/10" />
                                 <span className="text-[11px] font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]">{p.full_name}</span>

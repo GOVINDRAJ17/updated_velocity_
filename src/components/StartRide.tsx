@@ -335,7 +335,7 @@ export function StartRide() {
   // --- CREATE FORM VIEW ---
   if (showCreateForm) {
     return (
-      <div className="min-h-[calc(100vh-64px)] bg-[#0B0F19] text-white p-5 animate-in slide-in-from-right relative z-40 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
+      <div className="min-h-[calc(100vh-64px)] bg-[#0B0F19] text-white p-5 animate-in slide-in-from-right relative z-40 bg-fixed">
         <div className="absolute top-0 left-0 w-full h-full bg-blue-900/5 backdrop-blur-[2px] pointer-events-none"></div>
         <div className="relative z-10 max-w-lg mx-auto">
           <div className="flex items-center gap-3 mb-6">

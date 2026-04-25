@@ -90,6 +90,43 @@ app.post('/api/payments/create-intent', async (req, res) => {
   }
 });
 
+// Profile Dynamic Endpoints
+app.get('/api/activity', (req, res) => {
+  res.json([
+    { type: 'ride_joined', message: 'You joined the Mumbai ➔ Pune expedition', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+    { type: 'alert', message: 'Secure Protocol Key generated for your ride', timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString() }
+  ]);
+});
+
+app.get('/api/user/vehicle', (req, res) => {
+  res.json({ name: 'Royal Enfield Classic 350', number: 'MH 12 AB 1234' });
+});
+
+app.get('/api/squad', (req, res) => {
+  res.json({
+    name: 'Night Riders',
+    count: 4,
+    members: [
+      { avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1' },
+      { avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=2' },
+      { avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3' },
+      { avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=4' }
+    ]
+  });
+});
+
+app.get('/api/splits', (req, res) => {
+  // Return an array of splits as requested
+  res.json([
+    { id: '1', title: 'Highway Fuel', status: 'pending', amount: 250, type: 'owed' },
+    { id: '2', title: 'Snacks at Dhaba', status: 'settled', amount: 150, type: 'receivable' }
+  ]);
+});
+
+app.post('/api/rides/leave', (req, res) => {
+  res.json({ success: true });
+});
+
 // Real-time Text Chat via Socket.IO
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
