@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
-import { Share2, Edit2, ShieldCheck, MapPin, Calendar, Clock, Award, Wallet, CheckCircle2, Bell, Users, Car, Settings2, Flag, ArrowRight, Zap } from 'lucide-react';
+import { Share2, Edit2, ShieldCheck, MapPin, Calendar, Clock, Award, Wallet, CheckCircle2, Bell, Users, Car, Settings2, Flag, ArrowRight, Zap, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useRides } from '../contexts/RideContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -429,8 +429,11 @@ export function Profile() {
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 flex items-center gap-2">
                   Velocity Wallet
-                  <button onClick={handleRevealBalance} className="text-slate-500 hover:text-white transition-colors">
-                    {isBalanceRevealed ? '👁' : '🔒'}
+                  <button 
+                    onClick={handleRevealBalance} 
+                    className={`flex items-center justify-center p-1.5 rounded-full transition-all duration-300 active:scale-90 ${isBalanceRevealed ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200'}`}
+                  >
+                    {isBalanceRevealed ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   </button>
                 </p>
                 <div className="text-2xl font-black flex items-center transition-all">
@@ -444,9 +447,9 @@ export function Profile() {
             </div>
             <button 
               onClick={() => setShowWalletOverlay(true)}
-              className="relative z-10 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_8px_20px_-4px_rgba(37,99,235,0.5)] hover:shadow-[0_12px_25px_-4px_rgba(37,99,235,0.7)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 press-effect"
+              className="relative z-10 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:scale-[1.05] active:scale-95 transition-all press-effect"
             >
-              <Zap className="w-3.5 h-3.5 fill-white/20" /> Top Up
+              Top Up
             </button>
           </div>
 
