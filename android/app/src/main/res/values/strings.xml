@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VelocityApp</string>
+    <string name="title_activity_main">VelocityApp</string>
+    <string name="package_name">com.velocity.app</string>
+    <string name="custom_url_scheme">com.velocity.app</string>
+</resources>
