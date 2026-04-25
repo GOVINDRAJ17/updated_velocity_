@@ -52,8 +52,10 @@ export function WalletView({ onClose }: WalletViewProps) {
     const val = parseFloat(amount);
     if (!val || val <= 0) { error('Enter a valid amount'); return; }
     setIsAdding(true);
-    const upiUrl = `upi://pay?pa=velocity@oksbi&pn=VelocityApp&am=${val}&cu=INR&tn=WalletTopup`;
-    if (isMobile) window.location.href = upiUrl;
+    
+    // Always trigger redirect so user experiences the UPI intent flow (even on desktop it will try)
+    const upiUrl = `upi://pay?pa=velocity@oksbi&pn=VelocityApp&am=${val}&cu=INR&tn=WalletTopup&mode=02`;
+    window.location.href = upiUrl;
 
     setTimeout(async () => {
       try {
@@ -281,7 +283,7 @@ export function WalletView({ onClose }: WalletViewProps) {
                     Processing...
                   </>
                 ) : (
-                  <>{isMobile ? 'Authorize UPI' : 'Confirm Payment'} <ArrowRight className="w-5 h-5" /></>
+                  <>Authorize via UPI <ArrowRight className="w-5 h-5" /></>
                 )}
               </button>
             </div>
