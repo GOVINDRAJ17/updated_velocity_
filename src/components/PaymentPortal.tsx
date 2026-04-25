@@ -186,17 +186,26 @@ export function PaymentPortal({
                   </div>
                </div>
 
-               <p className="text-[9px] text-slate-500 font-bold uppercase text-center leading-relaxed px-4 tracking-tighter">
-                  Scan to pay directly into the creator's bank account. Confirm once your app shows "Success".
+               <p className="text-[9px] text-slate-500 font-bold uppercase text-center leading-relaxed px-4 tracking-tighter mb-4">
+                  Scan the QR with another device, or tap below to open GPay/PhonePe directly on this phone.
                </p>
 
-               <button 
-                 disabled={isProcessing}
-                 onClick={confirmExternalPay}
-                 className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-white/10 transition-all active:scale-95 flex items-center justify-center gap-3"
-               >
-                  {isProcessing ? 'Processing...' : 'I have Settled Digitally'}
-               </button>
+               <div className="space-y-3">
+                 <button 
+                   onClick={handleExternalUpi}
+                   className="w-full py-5 bg-[#0B0F19] text-white border border-blue-500/30 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-blue-500/10 transition-all active:scale-95 flex items-center justify-center gap-3"
+                 >
+                    Pay via GPay / PhonePe <ArrowRight className="w-4 h-4" />
+                 </button>
+
+                 <button 
+                   disabled={isProcessing}
+                   onClick={confirmExternalPay}
+                   className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-white/10 transition-all active:scale-95 flex items-center justify-center gap-3"
+                 >
+                    {isProcessing ? 'Processing...' : 'I have Settled Digitally'}
+                 </button>
+               </div>
             </div>
           )}
        </div>
