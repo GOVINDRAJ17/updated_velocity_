@@ -9,6 +9,7 @@ interface RideContextType {
   refreshRides: () => Promise<void>;
   getRideStatus: (ride: any) => 'upcoming' | 'active' | 'past';
   joinRide: (rideId: string) => Promise<{ success: boolean; error?: string }>;
+  leaveRide: (rideId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const RideContext = createContext<RideContextType | undefined>(undefined);
@@ -112,6 +113,60 @@ export function RideProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const leaveRide = async (rideId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('Authentication required');
+
+      const ride = allRides.find(r => r.id === rideId);
+      if (!ride) throw new Error('Ride not found');
+
+      // API REQUIREMENT: POST /api/rides/leave
+      try {
+        await fetch('/api/rides/leave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rideId })
+        });
+      } catch (e) {
+        // Fallback to real Supabase implementation if API is missing
+      }
+
+      const isDriver = ride.driver?.id === session.user.id;
+
+      if (isDriver) {
+        // End/Cancel Ride
+        const { error } = await supabase
+          .from('rides')
+          .update({ status: 'past' })
+          .eq('id', rideId);
+        if (error) throw error;
+        
+        // Notify all members
+        await supabase.from('chat_messages').insert({
+          ride_id: rideId,
+          content: 'The creator has ended this ride.',
+          user_id: session.user.id,
+          user_name: 'SYSTEM',
+          is_system: true
+        });
+      } else {
+        // Leave Ride
+        const { error } = await supabase
+          .from('ride_participants')
+          .delete()
+          .eq('ride_id', rideId)
+          .eq('user_id', session.user.id);
+        if (error) throw error;
+      }
+
+      await fetchRides();
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
   useEffect(() => {
     fetchRides();
   }, []);
@@ -124,7 +179,8 @@ export function RideProvider({ children }: { children: ReactNode }) {
       isLoading, 
       refreshRides: fetchRides,
       getRideStatus,
-      joinRide
+      joinRide,
+      leaveRide
     }}>
       {children}
     </RideContext.Provider>

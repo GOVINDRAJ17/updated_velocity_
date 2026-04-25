@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Search, MapPin, Users, Info, ChevronRight,
   ChevronDown, ChevronUp, Clock, Navigation, Thermometer,
-  Zap, Calendar, Radio, Share2
+  Zap, Calendar, Radio, Share2, ShieldAlert
 } from 'lucide-react';
 import { fetchWeather, WeatherData } from '../lib/weather';
 import { useTheme } from '../contexts/ThemeContext';
@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 export function Groups() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const { allRides, discoverRides, myRides, isLoading, refreshRides, joinRide, getRideStatus } = useRides();
+  const { allRides, discoverRides, myRides, isLoading, refreshRides, joinRide, leaveRide, getRideStatus } = useRides();
   const { success, error, toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [isJoiningLocal, setIsJoiningLocal] = useState<string | null>(null);
@@ -83,6 +83,8 @@ export function Groups() {
       setShowPasscodeModal(false);
       setPasscode('');
       setTargetRideForPasscode(null);
+      // Automatically connect to chat
+      navigate('/rideroom');
     } else {
       error(res.error || 'Failed to join.');
     }
@@ -188,7 +190,7 @@ export function Groups() {
               </div>
               
               {isJoined || isDriver ? (
-                 <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Joined</span>
+                 <button onClick={(e) => { e.stopPropagation(); navigate('/rideroom'); }} className="bg-emerald-600 text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(5,150,105,0.4)] press-effect">Open Ride</button>
               ) : status === 'past' ? (
                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Expired</span>
               ) : (
@@ -234,18 +236,42 @@ export function Groups() {
                 )}
              </div>
 
+             {/* Secure Protocol Key Logic */}
+             {ride.access_code && (
+               <div className={`rounded-[2rem] p-4 border ${isDark ? 'bg-indigo-500/5 border-indigo-500/10' : 'bg-indigo-50 border-indigo-100'}`}>
+                 <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                    <ShieldAlert className="w-3.5 h-3.5" /> Secure Protocol
+                 </div>
+                 {isJoined || isDriver ? (
+                   // User is part of ride, assuming verified for this scope
+                   <div className="flex items-center justify-between bg-black/40 px-4 py-3 rounded-2xl border border-indigo-500/20">
+                      <span className="font-mono text-lg font-bold tracking-widest text-indigo-300">{ride.access_code}</span>
+                   </div>
+                 ) : (
+                   <div className="text-center p-3 rounded-2xl bg-red-500/10 border border-red-500/20">
+                     <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Verification required to access secure protocol</p>
+                   </div>
+                 )}
+               </div>
+             )}
+
              {/* Action Button */}
              {isJoined || isDriver ? (
-               <button onClick={(e) => { e.stopPropagation(); navigate('/rideroom'); }} className="w-full bg-emerald-600 text-white py-3.5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                  <Radio className="w-4 h-4" /> Live Formation Room
-               </button>
+               <div className="flex flex-col gap-2">
+                 <button onClick={(e) => { e.stopPropagation(); navigate('/rideroom'); }} className="w-full bg-emerald-600 text-white py-3.5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_0_15px_rgba(5,150,105,0.4)] press-effect">
+                    <Radio className="w-4 h-4" /> Go to Chat
+                 </button>
+                 <button onClick={async (e) => { e.stopPropagation(); await leaveRide(ride.id); success(isDriver ? 'Ride ended.' : 'Left the ride.'); }} className="w-full bg-red-600/10 text-red-500 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all press-effect border border-red-500/20 hover:bg-red-600/20">
+                    {isDriver ? 'End Ride' : 'Leave Ride'}
+                 </button>
+               </div>
              ) : status === 'past' ? (
                <div className="w-full py-4 rounded-[1.5rem] bg-white/5 border border-white/5 text-[9px] font-black text-slate-500 text-center uppercase tracking-widest">EXPEDITION EXPIRED</div>
              ) : (
                <button 
                  onClick={(e) => handleInitialJoinClick(ride, e)}
                  disabled={isJoiningLocal === ride.id}
-                 className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                 className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all press-effect"
                >
                   {isJoiningLocal === ride.id ? 'Syncing...' : 'AUTHENTICATE & JOIN'}
                </button>

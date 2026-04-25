@@ -4,9 +4,15 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const { AccessToken } = require('livekit-server-sdk');
 const crypto = require('crypto');
-require('dotenv').config();
+require('dotenv').config({ path: '../.env.local' });
+require('dotenv').config(); // Fallback to .env in cwd
 
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+} else {
+  console.warn("WARNING: STRIPE_SECRET_KEY is missing. Payment routes will fail.");
+}
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -119,6 +125,23 @@ io.on('connection', (socket) => {
       user: userData,
       time: new Date().toISOString()
     });
+  });
+
+  // --- WEBRTC SIGNALING (VOICE) ---
+  socket.on("join_voice_room", (rideId) => {
+    socket.join(`voice_${rideId}`);
+    // Notify others in the voice room
+    socket.to(`voice_${rideId}`).emit("user_joined_voice", socket.id);
+  });
+
+  socket.on("signal", ({ rideId, data }) => {
+    // Basic signaling: forward to everyone else in the voice room
+    socket.to(`voice_${rideId}`).emit("signal", data);
+  });
+
+  socket.on("leave_voice_room", (rideId) => {
+    socket.leave(`voice_${rideId}`);
+    socket.to(`voice_${rideId}`).emit("user_left_voice", socket.id);
   });
 
   socket.on('disconnect', () => {

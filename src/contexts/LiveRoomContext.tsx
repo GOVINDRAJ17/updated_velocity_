@@ -1,13 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { supabase } from '../lib/supabase';
 import { useRides } from './RideContext';
 
 interface LiveRoomContextType {
-  socket: Socket | null;
   liveKitToken: string;
   messages: any[];
-  sendMessage: (message: string) => void;
+  sendMessage: (message: string) => Promise<void>;
   activeRide: any;
   leaveRide: () => void;
   currentUser: any;
@@ -16,15 +14,15 @@ interface LiveRoomContextType {
 const LiveRoomContext = createContext<LiveRoomContextType | undefined>(undefined);
 
 export function LiveRoomProvider({ children }: { children: ReactNode }) {
-  const { myRides, isLoading: isRidesLoading, refreshRides } = useRides();
+  const { myRides } = useRides();
   
   // Find the first active or upcoming ride to use for the room
   const activeRide = myRides.find(r => r.status === 'active' || r.status === 'upcoming');
 
   const [session, setSession] = useState<any>(null);
   const [liveKitToken, setLiveKitToken] = useState<string>('');
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
@@ -34,36 +32,71 @@ export function LiveRoomProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!activeRide || !session?.user) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-      }
       setLiveKitToken('');
+      setMessages([]);
       return;
     }
 
     const roomId = activeRide.id;
     const userName = session.user.user_metadata?.full_name || 'Rider';
 
-    // Establish persistent socket
-    const newSocket = io('http://localhost:4000');
-    setSocket(newSocket);
+    // 1. Fetch historical messages for persistence
+    const fetchHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('ride_id', roomId)
+          .order('created_at', { ascending: true });
+        
+        if (data && !error) {
+          const formatted = data.map(msg => ({
+            id: msg.id,
+            message: msg.content,
+            user: { id: msg.user_id, name: msg.user_name },
+            time: msg.created_at,
+            system: msg.is_system
+          }));
+          setMessages(formatted);
+        } else {
+           console.warn("Could not fetch chat history, table may not exist yet.");
+        }
+      } catch (err) {
+        console.warn("Error fetching history:", err);
+      }
+    };
 
-    newSocket.emit('join-ride', roomId, { id: session.user.id, name: userName });
+    fetchHistory();
 
-    newSocket.on('receive-message', (data) => {
-      setMessages(prev => [...prev, data]);
-    });
+    // 2. Subscribe to new messages via Supabase Realtime
+    const channel = supabase.channel(`ride_room_${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', table: 'chat_messages', filter: `ride_id=eq.${roomId}` },
+        (payload) => {
+          const newMsg = payload.new;
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.find(m => m.id === newMsg.id)) return prev;
+            return [...prev, {
+              id: newMsg.id,
+              message: newMsg.content,
+              user: { id: newMsg.user_id, name: newMsg.user_name },
+              time: newMsg.created_at,
+              system: newMsg.is_system
+            }];
+          });
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED' && !isSubscribed) {
+          setIsSubscribed(true);
+          // Insert system message for joining
+          insertSystemMessage(roomId, `${userName} joined the frequency`);
+        }
+      });
 
-    newSocket.on('user-joined', (data) => {
-      setMessages(prev => [...prev, { system: true, text: `${data.user.name} joined the frequency` }]);
-    });
-
-    newSocket.on('user-left', (data) => {
-      setMessages(prev => [...prev, { system: true, text: `${data.user.name} dropped connection` }]);
-    });
-
-    // Fetch token for LiveKit
+    // 3. Fetch token for LiveKit (optional voice)
     const fetchToken = async () => {
       try {
         const res = await fetch('http://localhost:4000/api/livekit/token', {
@@ -82,37 +115,64 @@ export function LiveRoomProvider({ children }: { children: ReactNode }) {
     fetchToken();
 
     return () => {
-      newSocket.emit('leave-ride', roomId, { id: session.user.id, name: userName });
-      newSocket.disconnect();
+      if (isSubscribed) {
+        insertSystemMessage(roomId, `${userName} dropped connection`);
+      }
+      supabase.removeChannel(channel);
+      setIsSubscribed(false);
     };
   }, [activeRide?.id, session?.user?.id]);
 
-  const sendMessage = (message: string) => {
-    if (!socket || !message.trim() || !activeRide || !session?.user) return;
+  const insertSystemMessage = async (rideId: string, text: string) => {
+    try {
+      await supabase.from('chat_messages').insert({
+        ride_id: rideId,
+        content: text,
+        user_id: session?.user?.id || null,
+        user_name: 'SYSTEM',
+        is_system: true
+      });
+    } catch (e) {
+      // Ignore if table doesn't exist
+    }
+  };
+
+  const sendMessage = async (message: string) => {
+    if (!message.trim() || !activeRide || !session?.user) return;
     
-    socket.emit('send-message', {
-      roomId: activeRide.id,
-      message: message.trim(),
-      user: { id: session.user.id, name: session.user.user_metadata?.full_name || 'Rider' }
-    });
+    const newMsg = {
+      ride_id: activeRide.id,
+      content: message.trim(),
+      user_id: session.user.id,
+      user_name: session.user.user_metadata?.full_name || 'Rider',
+      is_system: false
+    };
+
+    try {
+      const { error } = await supabase.from('chat_messages').insert(newMsg);
+      if (error) {
+        console.error("Failed to send message:", error);
+        // Fallback: update local state if table missing
+        setMessages(prev => [...prev, {
+          id: Math.random().toString(),
+          message: newMsg.content,
+          user: { id: newMsg.user_id, name: newMsg.user_name },
+          time: new Date().toISOString(),
+          system: false
+        }]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const leaveRide = async () => {
     if (!activeRide) return;
-    try {
-      if (socket) {
-        socket.emit('leave-ride', activeRide.id, { id: session?.user?.id, name: session?.user?.user_metadata?.full_name });
-        socket.disconnect();
-        setSocket(null);
-      }
-      setLiveKitToken('');
-    } catch (e) {
-      console.error(e);
-    }
+    setLiveKitToken('');
   };
 
   return (
-    <LiveRoomContext.Provider value={{ socket, liveKitToken, messages, sendMessage, activeRide, leaveRide, currentUser: session?.user }}>
+    <LiveRoomContext.Provider value={{ liveKitToken, messages, sendMessage, activeRide, leaveRide, currentUser: session?.user }}>
       {children}
     </LiveRoomContext.Provider>
   );
