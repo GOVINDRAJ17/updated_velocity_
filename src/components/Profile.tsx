@@ -178,7 +178,13 @@ export function Profile() {
 
       let vehicles = [];
       try {
-        vehicles = JSON.parse(profileData.riding_style || '[]');
+        if (Array.isArray(profileData.riding_style)) {
+          vehicles = profileData.riding_style.map(v => {
+            try { return typeof v === 'string' ? JSON.parse(v) : v; } catch(e) { return null; }
+          }).filter(Boolean);
+        } else if (typeof profileData.riding_style === 'string' && profileData.riding_style) {
+          vehicles = JSON.parse(profileData.riding_style);
+        }
       } catch (e) {
         vehicles = [];
       }
@@ -257,7 +263,7 @@ export function Profile() {
         vehicle_type: formData.vehicles?.[0]?.vehicle_type || formData.vehicle_type,
         number_plate: formData.vehicles?.[0]?.number_plate || formData.number_plate,
         plate_private: formData.vehicles?.[0]?.plate_private ?? formData.plate_private,
-        riding_style: JSON.stringify(formData.vehicles || []),
+        riding_style: (formData.vehicles || []).map(v => JSON.stringify(v)),
         avatar_url: formData.avatar_url
       };
 
