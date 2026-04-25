@@ -40,7 +40,8 @@ app.post('/api/livekit/token', async (req, res) => {
   const apiSecret = process.env.LIVEKIT_API_SECRET;
 
   if (!apiKey || !apiSecret) {
-    return res.status(500).json({ error: 'Server LiveKit credentials are not configured' });
+    console.error("FATAL: LiveKit credentials (LIVEKIT_API_KEY, LIVEKIT_API_SECRET) are missing in .env.local");
+    return res.status(500).json({ error: 'Server LiveKit credentials are not configured. Please check .env.local' });
   }
 
   try {
